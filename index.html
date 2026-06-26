@@ -3,246 +3,319 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DGIC 4.0 — Audience Vote</title>
+<title>DGIC 4.0 — Live Vote Dashboard</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
   :root {
-    --navy: #050A14;
-    --gold: #F5A623;
-    --teal: #00D4AA;
-    --warm-white: #F0EDE8;
-    --surface: #0D1622;
-    --surface-2: #162030;
-    --border: rgba(245,166,35,0.15);
-    --text-muted: rgba(240,237,232,0.5);
+    --navy:#050A14; --gold:#F5A623; --teal:#00D4AA;
+    --warm-white:#F0EDE8; --surface:#0D1622; --surface2:#162030;
+    --border:rgba(245,166,35,.15); --muted:rgba(240,237,232,.5);
+    --silver:#C0C0C0; --bronze:#CD7F32;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--navy); color: var(--warm-white); font-family: 'Space Grotesk', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
-  header { width: 100%; background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .brand-title { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: var(--gold); letter-spacing: 0.08em; text-transform: uppercase; }
-  .brand-sub { font-size: 11px; color: var(--text-muted); letter-spacing: 0.04em; margin-top: 2px; }
-  #countdown-wrap { display: flex; flex-direction: column; align-items: flex-end; }
-  #countdown-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
-  #countdown-display { font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700; color: var(--teal); letter-spacing: 0.05em; transition: color 0.3s; }
-  #countdown-display.urgent { color: #FF4D4D; }
-  #countdown-display.locked { color: var(--text-muted); }
-  main { width: 100%; max-width: 520px; padding: 28px 20px 60px; }
-  #auth-section, #vote-section, #locked-section { display: none; }
-  #auth-section.active, #vote-section.active, #locked-section.active { display: block; }
-  .section-heading { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; }
-  .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px 24px; }
-  .auth-card h2 { font-size: 22px; font-weight: 700; color: var(--warm-white); margin-bottom: 8px; line-height: 1.2; }
-  .auth-card p { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.6; }
-  label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-  input[type="text"] { width: 100%; background: var(--navy); border: 1.5px solid rgba(245,166,35,0.25); border-radius: 8px; padding: 14px 16px; font-family: 'Space Mono', monospace; font-size: 16px; color: var(--warm-white); letter-spacing: 0.06em; outline: none; transition: border-color 0.2s; text-transform: uppercase; }
-  input[type="text"]::placeholder { color: rgba(240,237,232,0.2); text-transform: none; }
-  input[type="text"]:focus { border-color: var(--gold); }
-  .error-msg { font-size: 12px; color: #FF6B6B; margin-top: 8px; min-height: 16px; display: none; }
-  .error-msg.visible { display: block; }
-  .btn-primary { width: 100%; margin-top: 20px; padding: 15px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; transition: opacity 0.2s, transform 0.1s; }
-  .btn-primary:hover { opacity: 0.9; }
-  .btn-primary:active { transform: scale(0.98); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-  .voter-badge { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; }
-  .voter-badge .ticket { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--gold); font-weight: 700; }
-  .voter-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
-  .voter-badge .name { font-size: 13px; color: var(--warm-white); flex: 1; }
-  .vote-instruction { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
-  .vote-instruction strong { color: var(--warm-white); }
-  .team-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
-  .team-option { position: relative; cursor: pointer; }
-  .team-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
-  .team-card { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1.5px solid rgba(240,237,232,0.08); border-radius: 10px; padding: 16px 18px; transition: border-color 0.2s, background 0.2s; cursor: pointer; user-select: none; }
-  .team-option input:checked + .team-card { border-color: var(--gold); background: rgba(245,166,35,0.07); }
-  .team-card:hover { border-color: rgba(245,166,35,0.4); }
-  .team-number { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-muted); width: 24px; flex-shrink: 0; }
-  .team-option input:checked + .team-card .team-number { color: var(--gold); }
-  .team-name { font-size: 15px; font-weight: 600; color: var(--warm-white); flex: 1; }
-  .team-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(240,237,232,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
-  .team-option input:checked + .team-card .team-check { background: var(--gold); border-color: var(--gold); }
-  .team-check-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--navy); display: none; }
-  .team-option input:checked + .team-card .team-check-dot { display: block; }
-  .current-vote-note { font-size: 12px; color: var(--teal); margin-bottom: 16px; padding: 10px 14px; background: rgba(0,212,170,0.06); border-radius: 6px; border-left: 3px solid var(--teal); display: none; }
-  .current-vote-note.visible { display: block; }
-  #vote-feedback { font-size: 13px; color: var(--teal); text-align: center; min-height: 20px; margin-top: 8px; display: none; }
-  #vote-feedback.visible { display: block; }
-  #vote-feedback.error { color: #FF6B6B; }
-  .locked-card { background: var(--surface); border: 1px solid rgba(240,237,232,0.08); border-radius: 12px; padding: 40px 24px; text-align: center; }
-  .locked-icon { font-size: 40px; margin-bottom: 16px; }
-  .locked-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
-  .locked-card p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
-  .dashboard-link { display: inline-block; margin-top: 24px; padding: 12px 28px; background: var(--teal); color: var(--navy); border-radius: 8px; font-weight: 700; font-size: 14px; text-decoration: none; transition: opacity 0.2s; }
-  .dashboard-link:hover { opacity: 0.85; }
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(5,10,20,0.3); border-top-color: var(--navy); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  footer { margin-top: auto; padding: 20px; text-align: center; font-size: 11px; color: var(--text-muted); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--navy); color:var(--warm-white); font-family:'Space Grotesk',sans-serif; min-height:100vh; display:flex; flex-direction:column; }
+
+  /* Header */
+  header { background:var(--surface); border-bottom:1px solid var(--border); padding:16px 28px; display:flex; align-items:center; justify-content:space-between; }
+  .h-left { display:flex; flex-direction:column; }
+  .h-eyebrow { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:3px; }
+  .h-title { font-family:'Space Mono',monospace; font-size:18px; font-weight:700; color:var(--gold); }
+  .h-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+  .status-pill { display:flex; align-items:center; gap:6px; padding:4px 11px; border-radius:20px; font-size:12px; font-weight:600; }
+  .status-pill.live { background:rgba(0,212,170,.1); color:var(--teal); border:1px solid rgba(0,212,170,.3); }
+  .status-pill.closed { background:rgba(240,237,232,.05); color:var(--muted); border:1px solid rgba(240,237,232,.1); }
+  .pulse { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  #cd-dash { font-family:'Space Mono',monospace; font-size:26px; font-weight:700; color:var(--teal); transition:color .3s; }
+  #cd-dash.urgent { color:#FF4D4D; }
+  #cd-dash.locked { color:var(--muted); font-size:16px; }
+
+  /* Stats bar */
+  .stats { display:flex; border-bottom:1px solid var(--border); }
+  .stat { flex:1; padding:12px 20px; border-right:1px solid var(--border); }
+  .stat:last-child { border-right:none; }
+  .stat-lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:3px; }
+  .stat-val { font-family:'Space Mono',monospace; font-size:20px; font-weight:700; }
+  .stat-val.gold { color:var(--gold); }
+  .stat-val.teal { color:var(--teal); }
+
+  /* Podium leaders */
+  .leaders { display:flex; gap:10px; padding:16px 28px; border-bottom:1px solid var(--border); }
+  .leader-card { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+  .leader-card.gold-card { border-color:rgba(245,166,35,.4); }
+  .leader-card.silver-card { border-color:rgba(192,192,192,.3); }
+  .leader-card.bronze-card { border-color:rgba(205,127,50,.3); }
+  .leader-pos { font-size:18px; margin-bottom:4px; }
+  .leader-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+  .leader-team { font-size:13px; font-weight:700; color:var(--warm-white); margin-bottom:4px; min-height:18px; }
+  .leader-pts { font-family:'Space Mono',monospace; font-size:12px; color:var(--gold); }
+
+  /* Main chart */
+  main { flex:1; padding:20px 28px 40px; }
+  .chart-hdr { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; }
+  .chart-title { font-size:15px; font-weight:600; }
+  .last-upd { font-size:11px; color:var(--muted); }
+
+  /* Column headers */
+  .col-hdr { display:flex; align-items:center; gap:10px; margin-bottom:8px; padding:0 4px; }
+  .col-rank { width:22px; }
+  .col-name { width:140px; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  .col-bars { flex:1; display:flex; gap:6px; }
+  .col-bar-lbl { flex:1; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; text-align:center; }
+  .col-total { width:64px; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; text-align:right; }
+
+  /* Bar rows */
+  .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .br-rank { font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); width:22px; text-align:right; flex-shrink:0; }
+  .br-rank.top { color:var(--gold); font-weight:700; }
+  .br-name { font-size:12px; font-weight:600; width:140px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .br-bars { flex:1; display:flex; gap:6px; }
+  .br-bar-wrap { flex:1; background:rgba(240,237,232,.05); border-radius:4px; height:28px; position:relative; overflow:hidden; }
+  .br-bar-fill { height:100%; border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1); display:flex; align-items:center; justify-content:flex-end; padding-right:6px; min-width:0; }
+  .br-bar-fill.b1 { background:linear-gradient(90deg,rgba(245,166,35,.8),rgba(245,166,35,.4)); }
+  .br-bar-fill.b2 { background:linear-gradient(90deg,rgba(192,192,192,.7),rgba(192,192,192,.3)); }
+  .br-bar-fill.b3 { background:linear-gradient(90deg,rgba(205,127,50,.7),rgba(205,127,50,.3)); }
+  .br-bar-count { font-family:'Space Mono',monospace; font-size:11px; font-weight:700; color:var(--navy); white-space:nowrap; }
+  .br-bar-count.zero { color:var(--muted); position:absolute; right:5px; top:50%; transform:translateY(-50%); }
+  .br-total { font-family:'Space Mono',monospace; font-size:13px; font-weight:700; color:var(--warm-white); width:64px; text-align:right; flex-shrink:0; }
+  .br-total.leading { color:var(--gold); }
+
+  /* Final banner */
+  .final-banner { display:none; align-items:center; gap:14px; background:rgba(245,166,35,.07); border:1px solid var(--gold); border-radius:10px; padding:14px 20px; margin-bottom:18px; }
+  .final-banner.on { display:flex; }
+  .final-banner h3 { font-size:15px; font-weight:700; color:var(--gold); }
+  .final-banner p { font-size:12px; color:var(--muted); margin-top:2px; }
+
+  footer { padding:14px 28px; text-align:center; font-size:11px; color:var(--muted); border-top:1px solid var(--border); }
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">
-    <div class="brand-title">DGIC 4.0</div>
-    <div class="brand-sub">Audience Vote · Grand Finale</div>
+  <div class="h-left">
+    <span class="h-eyebrow">NUESA UNIBEN · Grand Finale · July 10, 2026</span>
+    <span class="h-title">DGIC 4.0 — Audience Vote</span>
   </div>
-  <div id="countdown-wrap">
-    <span id="countdown-label">Voting closes in</span>
-    <span id="countdown-display">--:--:--</span>
+  <div class="h-right">
+    <div class="status-pill live" id="status-pill">
+      <span class="pulse" id="pulse-dot"></span>
+      <span id="status-txt">Live</span>
+    </div>
+    <div id="cd-dash">--:--:--</div>
   </div>
 </header>
+
+<div class="stats">
+  <div class="stat"><div class="stat-lbl">Total Votes Cast</div><div class="stat-val gold" id="stat-total">0</div></div>
+  <div class="stat"><div class="stat-lbl">Registered</div><div class="stat-val" id="stat-reg">—</div></div>
+  <div class="stat"><div class="stat-lbl">Participation</div><div class="stat-val teal" id="stat-pct">—</div></div>
+  <div class="stat"><div class="stat-lbl">Teams</div><div class="stat-val" id="stat-teams">10</div></div>
+</div>
+
+<!-- Podium leaders -->
+<div class="leaders">
+  <div class="leader-card gold-card">
+    <div class="leader-pos">🥇</div>
+    <div class="leader-label">Leading — 1st</div>
+    <div class="leader-team" id="lead-1">—</div>
+    <div class="leader-pts" id="lead-1-pts"></div>
+  </div>
+  <div class="leader-card silver-card">
+    <div class="leader-pos">🥈</div>
+    <div class="leader-label">Leading — 2nd</div>
+    <div class="leader-team" id="lead-2">—</div>
+    <div class="leader-pts" id="lead-2-pts"></div>
+  </div>
+  <div class="leader-card bronze-card">
+    <div class="leader-pos">🥉</div>
+    <div class="leader-label">Leading — 3rd</div>
+    <div class="leader-team" id="lead-3">—</div>
+    <div class="leader-pts" id="lead-3-pts"></div>
+  </div>
+</div>
+
 <main>
-  <div id="auth-section" class="active">
-    <p class="section-heading">Verify your ticket</p>
-    <div class="auth-card">
-      <h2>Cast your vote</h2>
-      <p>Enter your registration ticket ID to access the ballot. You can change your vote any time before the countdown ends.</p>
-      <label for="ticket-input">Ticket ID</label>
-      <input type="text" id="ticket-input" placeholder="e.g. DGIC4-0070" maxlength="20" autocomplete="off" />
-      <div class="error-msg" id="auth-error"></div>
-      <button class="btn-primary" id="verify-btn" onclick="verifyTicket()">Verify & Continue</button>
-    </div>
+  <div class="final-banner" id="final-banner">
+    <span style="font-size:26px">🏆</span>
+    <div><h3>Final Results</h3><p>Voting closed. These are the official audience vote results.</p></div>
   </div>
-  <div id="vote-section">
-    <p class="section-heading">Cast your vote</p>
-    <div class="voter-badge">
-      <span class="dot"></span>
-      <span class="name" id="voter-name">—</span>
-      <span class="ticket" id="voter-ticket">—</span>
-    </div>
-    <div class="current-vote-note" id="current-vote-note"></div>
-    <p class="vote-instruction">Select the team you think deserves the <strong>Audience Choice Award</strong>. You can change your vote as teams present.</p>
-    <div class="team-grid" id="team-grid"></div>
-    <button class="btn-primary" id="submit-btn" type="button" onclick="submitVote()">Submit Vote</button>
-    <div id="vote-feedback"></div>
+
+  <div class="chart-hdr">
+    <span class="chart-title">Full Breakdown — All Teams</span>
+    <span class="last-upd" id="last-upd">Updating…</span>
   </div>
-  <div id="locked-section">
-    <div class="locked-card">
-      <div class="locked-icon">🔒</div>
-      <h2>Voting is closed</h2>
-      <p>The voting window has ended. Results are now being displayed on the main screen.</p>
-      <a href="dgic4-dashboard.html" class="dashboard-link">View Results →</a>
+
+  <div class="col-hdr">
+    <div class="col-rank"></div>
+    <div class="col-name">Team</div>
+    <div class="col-bars">
+      <div class="col-bar-lbl">🥇 1st votes</div>
+      <div class="col-bar-lbl">🥈 2nd votes</div>
+      <div class="col-bar-lbl">🥉 3rd votes</div>
     </div>
+    <div class="col-total">Points</div>
   </div>
+
+  <div id="chart"></div>
 </main>
-<footer>NUESA UNIBEN · Daddy G.O Innovation Challenge 4.0 · July 10, 2026</footer>
+
+<footer>Auto-refreshes every 4 seconds · NUESA UNIBEN · Daddy G.O Innovation Challenge 4.0</footer>
+
 <script>
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiuQQXQbvbh-kskU7HfN23WEW2ZVRu3ENwVNyo0v_SaYZWcdXOasmuePfTKggTrX2Kgg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymXFEIU0cHhdHdDqNZGbb1CzhCwhmE1eKjKNrQY8raUbjP3XBNTv3koa5JkILElCpHCA/exec';
 const TEAMS = [
-  'Team 1','Team 2','Team 3','Team 4','Team 5',
-  'Team 6','Team 7','Team 8','Team 9','Team 10'
+  'Team Placeholder 1','Team Placeholder 2','Team Placeholder 3',
+  'Team Placeholder 4','Team Placeholder 5','Team Placeholder 6',
+  'Team Placeholder 7','Team Placeholder 8','Team Placeholder 9',
+  'Team Placeholder 10'
 ];
-let voterTicket = null, voterName = null, currentVote = null, votingOpen = true, countdownInterval = null;
+
+let votingOpen = true, cdInterval = null;
+let scores = {};
+TEAMS.forEach(t => scores[t] = {first:0, second:0, third:0, total:0});
 
 window.addEventListener('DOMContentLoaded', () => {
-  buildTeamGrid();
-  startStatusPolling();
-  document.getElementById('ticket-input').addEventListener('keydown', e => { if (e.key === 'Enter') verifyTicket(); });
+  buildChart();
+  poll();
+  setInterval(poll, 4000);
 });
 
-function buildTeamGrid() {
-  document.getElementById('team-grid').innerHTML = TEAMS.map((name, i) => `
-    <label class="team-option">
-      <input type="radio" name="team" value="${name}">
-      <div class="team-card">
-        <span class="team-number">${String(i+1).padStart(2,'0')}</span>
-        <span class="team-name">${name}</span>
-        <span class="team-check"><span class="team-check-dot"></span></span>
+function buildChart() {
+  document.getElementById('chart').innerHTML = TEAMS.map((name, i) => `
+    <div class="bar-row" id="row-${i}">
+      <span class="br-rank" id="rank-${i}">${i+1}</span>
+      <span class="br-name" title="${name}">${name}</span>
+      <div class="br-bars">
+        <div class="br-bar-wrap">
+          <div class="br-bar-fill b1" id="b1-${i}" style="width:0%">
+            <span class="br-bar-count zero" id="c1-${i}">0</span>
+          </div>
+        </div>
+        <div class="br-bar-wrap">
+          <div class="br-bar-fill b2" id="b2-${i}" style="width:0%">
+            <span class="br-bar-count zero" id="c2-${i}">0</span>
+          </div>
+        </div>
+        <div class="br-bar-wrap">
+          <div class="br-bar-fill b3" id="b3-${i}" style="width:0%">
+            <span class="br-bar-count zero" id="c3-${i}">0</span>
+          </div>
+        </div>
       </div>
-    </label>`).join('');
+      <span class="br-total" id="tot-${i}">0</span>
+    </div>`).join('');
 }
 
-function startStatusPolling() { fetchStatus(); setInterval(fetchStatus, 5000); }
-
-async function fetchStatus() {
+async function poll() {
   try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=getStatus`);
-    const data = await res.json();
-    if (data.locked) { lockVoting(); return; }
-    votingOpen = true;
-    if (data.endTime) startCountdown(data.endTime);
-  } catch(e) {}
-}
-
-function startCountdown(endTimeMs) {
-  if (countdownInterval) clearInterval(countdownInterval);
-  tick(endTimeMs);
-  countdownInterval = setInterval(() => tick(endTimeMs), 1000);
-}
-
-function tick(endTimeMs) {
-  const remaining = endTimeMs - Date.now();
-  const el = document.getElementById('countdown-display');
-  if (remaining <= 0) { el.textContent = '00:00:00'; lockVoting(); return; }
-  const h = Math.floor(remaining/3600000), m = Math.floor((remaining%3600000)/60000), s = Math.floor((remaining%60000)/1000);
-  el.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  el.classList.toggle('urgent', remaining < 120000);
-  el.classList.remove('locked');
-}
-
-function pad(n) { return String(n).padStart(2,'0'); }
-
-function lockVoting() {
-  votingOpen = false;
-  if (countdownInterval) clearInterval(countdownInterval);
-  const el = document.getElementById('countdown-display');
-  el.textContent = 'CLOSED'; el.className = 'locked';
-  document.getElementById('countdown-label').textContent = 'Voting';
-  document.getElementById('auth-section').classList.remove('active');
-  document.getElementById('vote-section').classList.remove('active');
-  document.getElementById('locked-section').classList.add('active');
-}
-
-async function verifyTicket() {
-  if (!votingOpen) { lockVoting(); return; }
-  const ticket = document.getElementById('ticket-input').value.trim().toUpperCase();
-  const errEl = document.getElementById('auth-error');
-  const btn = document.getElementById('verify-btn');
-  if (!ticket) { showErr(errEl,'Please enter your ticket ID.'); return; }
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Verifying…'; errEl.classList.remove('visible');
-  try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=validateTicket&ticketId=${encodeURIComponent(ticket)}`);
-    const data = await res.json();
-    if (data.valid) { voterTicket = ticket; voterName = data.name || ticket; currentVote = data.currentVote || null; enterVoteSection(); }
-    else showErr(errEl, data.message || 'Ticket ID not found. Check your registration confirmation.');
-  } catch(e) { showErr(errEl,'Connection error. Please try again.'); }
-  finally { btn.disabled = false; btn.innerHTML = 'Verify & Continue'; }
-}
-
-function showErr(el, msg) { el.textContent = msg; el.classList.add('visible'); }
-
-function enterVoteSection() {
-  document.getElementById('auth-section').classList.remove('active');
-  document.getElementById('vote-section').classList.add('active');
-  document.getElementById('voter-name').textContent = voterName;
-  document.getElementById('voter-ticket').textContent = voterTicket;
-  if (currentVote) {
-    const note = document.getElementById('current-vote-note');
-    note.textContent = `Your current vote: ${currentVote}`; note.classList.add('visible');
-    const radio = document.querySelector(`input[value="${currentVote}"]`);
-    if (radio) radio.checked = true;
+    const r = await fetch(`${APPS_SCRIPT_URL}?action=getVoteCounts`);
+    const d = await r.json();
+    if (d.locked !== undefined) handleLock(d.locked);
+    if (d.counts) updateChart(d.counts);
+    if (d.endTime && votingOpen) startCountdown(d.endTime);
+    if (d.registered) {
+      document.getElementById('stat-reg').textContent = d.registered;
+      const total = Object.values(d.counts||{}).reduce((a,b) => a + (b.total||0), 0);
+      document.getElementById('stat-pct').textContent =
+        d.registered > 0 ? Math.round(total/d.registered*100)+'%' : '—';
+    }
+    document.getElementById('last-upd').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('last-upd').textContent = 'Reconnecting…';
   }
 }
 
-async function submitVote() {
-  if (!votingOpen) { lockVoting(); return; }
-  const selected = document.querySelector('input[name="team"]:checked');
-  const feedback = document.getElementById('vote-feedback');
-  const btn = document.getElementById('submit-btn');
-  if (!selected) { feedback.textContent = 'Select a team first.'; feedback.className = 'visible error'; return; }
-  const team = selected.value;
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Submitting…'; feedback.classList.remove('visible');
-  try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=submitVote&ticketId=${encodeURIComponent(voterTicket)}&team=${encodeURIComponent(team)}`);
-    const data = await res.json();
-    if (data.success) {
-      currentVote = team;
-      const note = document.getElementById('current-vote-note');
-      note.textContent = `Your current vote: ${team}`; note.classList.add('visible');
-      feedback.textContent = 'Vote updated ✓'; feedback.className = 'visible';
-      setTimeout(() => feedback.classList.remove('visible'), 3000);
-    } else { feedback.textContent = data.message || 'Something went wrong. Try again.'; feedback.className = 'visible error'; }
-  } catch(e) { feedback.textContent = 'Connection error. Try again.'; feedback.className = 'visible error'; }
-  finally { btn.disabled = false; btn.innerHTML = 'Submit Vote'; }
+function handleLock(locked) {
+  if (locked && votingOpen) {
+    votingOpen = false;
+    if (cdInterval) clearInterval(cdInterval);
+    const cd = document.getElementById('cd-dash');
+    cd.textContent = 'CLOSED'; cd.className = 'locked';
+    const pill = document.getElementById('status-pill');
+    pill.className = 'status-pill closed';
+    document.getElementById('pulse-dot').style.animation = 'none';
+    document.getElementById('status-txt').textContent = 'Closed';
+    document.getElementById('final-banner').classList.add('on');
+  }
 }
+
+function updateChart(counts) {
+  // counts = { teamName: { first: n, second: n, third: n, total: n } }
+  TEAMS.forEach(t => {
+    if (counts[t]) scores[t] = counts[t];
+  });
+
+  const maxFirst  = Math.max(...TEAMS.map(t => scores[t].first),  1);
+  const maxSecond = Math.max(...TEAMS.map(t => scores[t].second), 1);
+  const maxThird  = Math.max(...TEAMS.map(t => scores[t].third),  1);
+  const maxTotal  = Math.max(...TEAMS.map(t => scores[t].total),  1);
+
+  // Sort by total points descending
+  const sorted = [...TEAMS].sort((a,b) => scores[b].total - scores[a].total);
+
+  // Update total votes stat
+  const grandTotal = TEAMS.reduce((a,t) => a + scores[t].first, 0); // count of voters
+  document.getElementById('stat-total').textContent = grandTotal;
+
+  // Update podium leaders
+  updateLeader('lead-1','lead-1-pts', sorted[0]);
+  updateLeader('lead-2','lead-2-pts', sorted[1]);
+  updateLeader('lead-3','lead-3-pts', sorted[2]);
+
+  // Update each bar row
+  TEAMS.forEach((name, i) => {
+    const s = scores[name];
+    const rank = sorted.indexOf(name) + 1;
+
+    setBar(`b1-${i}`, `c1-${i}`, s.first,  maxFirst,  'b1');
+    setBar(`b2-${i}`, `c2-${i}`, s.second, maxSecond, 'b2');
+    setBar(`b3-${i}`, `c3-${i}`, s.third,  maxThird,  'b3');
+
+    const totEl = document.getElementById(`tot-${i}`);
+    totEl.textContent = s.total;
+    totEl.className = 'br-total' + (rank === 1 && s.total > 0 ? ' leading' : '');
+
+    const rankEl = document.getElementById(`rank-${i}`);
+    rankEl.textContent = rank;
+    rankEl.className = 'br-rank' + (rank <= 3 && s.total > 0 ? ' top' : '');
+  });
+}
+
+function setBar(fillId, countId, val, max, cls) {
+  const fill = document.getElementById(fillId);
+  const count = document.getElementById(countId);
+  const pct = max > 0 ? Math.round(val/max*100) : 0;
+  fill.style.width = pct + '%';
+  fill.className = 'br-bar-fill ' + cls + (val === 0 ? ' zero-bar' : '');
+  count.textContent = val;
+  count.className = 'br-bar-count' + (val === 0 ? ' zero' : '');
+}
+
+function updateLeader(teamElId, ptsElId, teamName) {
+  const teamEl = document.getElementById(teamElId);
+  const ptsEl = document.getElementById(ptsElId);
+  if (teamName && scores[teamName] && scores[teamName].total > 0) {
+    teamEl.textContent = teamName;
+    ptsEl.textContent = scores[teamName].total + ' pts';
+  } else {
+    teamEl.textContent = '—';
+    ptsEl.textContent = '';
+  }
+}
+
+function startCountdown(ms) {
+  if (cdInterval) clearInterval(cdInterval);
+  tick(ms); cdInterval = setInterval(() => tick(ms), 1000);
+}
+function tick(ms) {
+  const rem = ms - Date.now();
+  const el = document.getElementById('cd-dash');
+  if (rem <= 0) { el.textContent='00:00:00'; return; }
+  const h=Math.floor(rem/3600000),m=Math.floor((rem%3600000)/60000),s=Math.floor((rem%60000)/1000);
+  el.textContent=`${p(h)}:${p(m)}:${p(s)}`;
+  el.classList.toggle('urgent', rem<120000);
+  el.classList.remove('locked');
+}
+function p(n) { return String(n).padStart(2,'0'); }
 </script>
 </body>
 </html>
